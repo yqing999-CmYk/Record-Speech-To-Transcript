@@ -1,0 +1,11 @@
+1, folder local-ai-transcript-app  is downloaded, from GitHub
+ https://github.com/AI-Engineer-Skool/local-ai-transcript-app/
+
+   backend is Python, front end UI is Typescript. 
+
+   these are for researching and collecting material. 
+
+2, folder "RecordSpeechToText" is what I start my work on. 
+
+3, the RecordSpeechToTranscript is where the Claude Code to work.
+ 
