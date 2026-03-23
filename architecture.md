@@ -1,7 +1,7 @@
 # RecordSpeechToTranscript — Architecture
 
 ## Overview
-Android mobile app (React Native + Expo) that records or uploads audio,
+An Android mobile app (React Native + Expo) that records or uploads audio,
 transcribes it locally with Whisper, then cleans the transcript via OpenAI GPT.
 
 ---
@@ -47,8 +47,6 @@ RecordSpeechToTranscript/
 ├── Voice Files/              ← audio files saved here by backend
 └── The Transcript/           ← cleaned .txt files saved here by backend
 ```
-
----
 
 ## API Endpoints
 | Method | Path | Purpose |
