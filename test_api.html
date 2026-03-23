@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RecordSpeechToTranscript — API Tester</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #d0d8e4;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    h1 {
+      color: #4facfe;
+      font-size: 20px;
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+    .subtitle { color: #8899aa; font-size: 13px; margin-bottom: 24px; }
+
+    .url-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: #0f3460;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 28px;
+    }
+    .url-bar label { color: #4facfe; font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .url-bar input {
+      flex: 1;
+      background: #0d0d1a;
+      border: 1px solid #4facfe44;
+      border-radius: 6px;
+      color: #d0d8e4;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-family: monospace;
+    }
+
+    .step {
+      background: #16213e;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border-left: 3px solid #4facfe44;
+    }
+    .step.active  { border-left-color: #4facfe; }
+    .step.success { border-left-color: #00f2fe; }
+    .step.error   { border-left-color: #e94560; }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .step-num {
+      background: #0f3460;
+      color: #4facfe;
+      font-weight: 700;
+      font-size: 13px;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-title { font-size: 15px; font-weight: 600; color: #d0d8e4; }
+    .step-desc  { font-size: 12px; color: #8899aa; margin-top: 2px; }
+
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+    button {
+      background: #0f3460;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover   { background: #4facfe; color: #0d0d1a; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.accent  { background: #533483; }
+    button.accent:hover { background: #7b5ea7; }
+
+    input[type="file"] {
+      background: #0d0d1a;
+      border: 1px dashed #4facfe55;
+      border-radius: 6px;
+      color: #d0d8e4;
+      padding: 8px 12px;
+      font-size: 13px;
+      flex: 1;
+    }
+
+    .result {
+      margin-top: 12px;
+      background: #0d0d1a;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .result.show { display: block; }
+    .result.ok  { color: #00f2fe; }
+    .result.err { color: #e94560; }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: #0d0d1a;
+      color: #8899aa;
+    }
+    .badge.ok  { color: #00f2fe; }
+    .badge.err { color: #e94560; }
+
+    .filename-note { color: #4facfe; font-size: 12px; font-family: monospace; }
+  </style>
+</head>
+<body>
+
+  <h1>RecordSpeechToTranscript — API Tester</h1>
+  <p class="subtitle">Test your FastAPI backend directly from the browser. Open this file in Chrome/Edge on your PC.</p>
+
+  <!-- Backend URL -->
+  <div class="url-bar">
+    <label>Backend URL</label>
+    <input id="baseUrl" type="text" value="http://localhost:8000" />
+  </div>
+
+  <!-- Step 1: Health Check -->
+  <div class="step" id="step1">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div>
+        <div class="step-title">Health Check <span class="badge" id="badge1">—</span></div>
+        <div class="step-desc">GET /health — confirms the backend is reachable</div>
+      </div>
+    </div>
+    <button onclick="checkHealth()">Check Backend</button>
+    <div class="result" id="res1"></div>
+  </div>
+
+  <!-- Step 2: Upload Audio -->
+  <div class="step" id="step2">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div>
+        <div class="step-title">Upload Audio <span class="badge" id="badge2">—</span></div>
+        <div class="step-desc">POST /upload-audio — saves file to Voice Files/ folder on PC</div>
+      </div>
+    </div>
+    <div class="row">
+      <input type="file" id="audioFile" accept=".mp3,.wav,.m4a" />
+      <button onclick="uploadAudio()">Upload</button>
+    </div>
+    <div class="result" id="res2"></div>
+  </div>
+
+  <!-- Step 3: Extract Text -->
+  <div class="step" id="step3">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div>
+        <div class="step-title">Extract Text (Whisper) <span class="badge" id="badge3">—</span></div>
+        <div class="step-desc">POST /extract-text — runs Whisper on the uploaded file</div>
+      </div>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <span style="color:#8899aa;font-size:13px;font-weight:600;">Whisper mode:</span>
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:#d0d8e4;font-size:13px">
+        <input type="radio" name="whisperMode" value="local" /> Local (openai-whisper on PC)
+      </label>
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:#d0d8e4;font-size:13px">
+        <input type="radio" name="whisperMode" value="api" checked /> OpenAI Whisper API
+      </label>
+    </div>
+    <div class="row">
+      <span class="filename-note" id="uploadedFilename">No file uploaded yet</span>
+      <button onclick="extractText()">Extract Text</button>
+    </div>
+    <div class="result" id="res3"></div>
+  </div>
+
+  <!-- Step 4: To Transcript -->
+  <div class="step" id="step4">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div>
+        <div class="step-title">To Transcript (GPT) <span class="badge" id="badge4">—</span></div>
+        <div class="step-desc">POST /to-transcript — cleans raw text with GPT, saves .txt file</div>
+      </div>
+    </div>
+    <button class="accent" onclick="toTranscript()">Clean &amp; Save</button>
+    <div class="result" id="res4"></div>
+  </div>
+
+  <script>
+    let uploadedFilename = null;
+    let rawText = null;
+
+    function base() {
+      return document.getElementById('baseUrl').value.replace(/\/$/, '');
+    }
+
+    function show(id, text, isOk) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'result show ' + (isOk ? 'ok' : 'err');
+    }
+
+    function setBadge(id, text, isOk) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'badge ' + (isOk ? 'ok' : 'err');
+    }
+
+    // Step 1 — Health check
+    async function checkHealth() {
+      try {
+        const r = await fetch(`${base()}/health`);
+        const data = await r.json();
+        show('res1', JSON.stringify(data, null, 2), true);
+        setBadge('badge1', '✓ OK', true);
+        document.getElementById('step1').className = 'step success';
+      } catch (e) {
+        show('res1', `ERROR: ${e.message}\n\nMake sure:\n• uvicorn is running on your PC\n• URL above is correct`, false);
+        setBadge('badge1', '✗ Failed', false);
+        document.getElementById('step1').className = 'step error';
+      }
+    }
+
+    // Step 2 — Upload audio
+    async function uploadAudio() {
+      const file = document.getElementById('audioFile').files[0];
+      if (!file) { alert('Pick an audio file first'); return; }
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const r = await fetch(`${base()}/upload-audio`, { method: 'POST', body: fd });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.detail || r.statusText);
+        uploadedFilename = data.filename;
+        document.getElementById('uploadedFilename').textContent = uploadedFilename;
+        show('res2', JSON.stringify(data, null, 2), true);
+        setBadge('badge2', '✓ Saved', true);
+        document.getElementById('step2').className = 'step success';
+      } catch (e) {
+        show('res2', `ERROR: ${e.message}`, false);
+        setBadge('badge2', '✗ Failed', false);
+        document.getElementById('step2').className = 'step error';
+      }
+    }
+
+    // Step 3 — Whisper transcription
+    async function extractText() {
+      if (!uploadedFilename) { alert('Upload an audio file first (Step 2)'); return; }
+      const mode = document.querySelector('input[name="whisperMode"]:checked').value;
+      const modeLabel = mode === 'api' ? 'OpenAI Whisper API' : 'local openai-whisper';
+      show('res3', `Running Whisper (${modeLabel})… this may take 10–60 seconds…`, true);
+      try {
+        const r = await fetch(`${base()}/extract-text`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: uploadedFilename, mode })
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.detail || r.statusText);
+        rawText = data.raw_text;
+        show('res3', data.raw_text, true);
+        setBadge('badge3', '✓ Done', true);
+        document.getElementById('step3').className = 'step success';
+      } catch (e) {
+        show('res3', `ERROR: ${e.message}`, false);
+        setBadge('badge3', '✗ Failed', false);
+        document.getElementById('step3').className = 'step error';
+      }
+    }
+
+    // Step 4 — GPT clean
+    async function toTranscript() {
+      if (!rawText) { alert('Run Extract Text first (Step 3)'); return; }
+      show('res4', 'Calling GPT to clean transcript…', true);
+      try {
+        const r = await fetch(`${base()}/to-transcript`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ raw_text: rawText, filename: uploadedFilename || 'test' })
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.detail || r.statusText);
+        show('res4', `Saved to: ${data.path}\n\n${data.transcript}`, true);
+        setBadge('badge4', '✓ Done', true);
+        document.getElementById('step4').className = 'step success';
+      } catch (e) {
+        show('res4', `ERROR: ${e.message}`, false);
+        setBadge('badge4', '✗ Failed', false);
+        document.getElementById('step4').className = 'step error';
+      }
+    }
+  </script>
+</body>
+</html>
